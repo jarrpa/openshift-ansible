@@ -114,6 +114,7 @@ are an exception:
 | openshift_storage_glusterfs_registry_storageclass     | False                 | It is recommended to not create a StorageClass for GlusterFS clusters serving registry storage, so as to avoid performance penalties
 | openshift_storage_glusterfs_registry_heketi_admin_key | auto-generated        | Separate from the above
 | openshift_storage_glusterfs_registry_heketi_user_key  | auto-generated        | Separate from the above
+| openshift_storage_glusterfs_registry_heketi_cluster   | Undefined             | ID of the cluster heketi should use to create the registry storage volume. **NOTE:** This is useful when there is a pre-existing heketi service managing more than one GlusterFS cluster
 
 Additionally, this role's behavior responds to the following registry-specific
 variables:

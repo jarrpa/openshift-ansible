@@ -77,5 +77,5 @@
   register: registry_volume
 
 - name: Create GlusterFS registry volume
-  command: "{{ glusterfs_heketi_client }} volume create --size={{ openshift.hosted.registry.storage.volume.size | replace('Gi','') }} --name={{ openshift.hosted.registry.storage.glusterfs.path }}"
+  command: "{{ glusterfs_heketi_client }} volume create {% if openshift_storage_glusterfs_registry_heketi_cluster is defined %}--clusters={{ openshift_storage_glusterfs_registry_heketi_cluster }} {% endif %}--size={{ openshift.hosted.registry.storage.volume.size | replace('Gi','') }} --name={{ openshift.hosted.registry.storage.glusterfs.path }}"
   when: "openshift.hosted.registry.storage.glusterfs.path not in registry_volume.stdout"
