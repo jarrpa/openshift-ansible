@@ -53,6 +53,28 @@
     - l_upgrade_nodes_drain_result is failed
     - openshift_upgrade_nodes_drain_timeout | default(0) | int == 0
 
+  # If the host is a gluster host, need to cleanly terminate GlusterFS pod
+  # before moving to the upgrade.
+  - name: Remove any existing GlusterFS label
+    oc_label:
+      name: "{{ inventory_hostname }}"
+      kind: node
+      state: absent
+      labels: "{{ openshift_storage_glusterfs_nodeselector }}"
+    when:
+    - 'glusterfs' in groups
+    - inventory_hostname in groups['glusterfs']
+
+  - name: Remove any existing GlusterFS label
+    oc_label:
+      name: "{{ inventory_hostname }}"
+      kind: node
+      state: absent
+      labels: "{{ openshift_storage_glusterfs_nodeselector }}"
+    when:
+    - 'glusterfs_registry' in groups
+    - inventory_hostname in groups['glusterfs_registry']
+
   # Run the pre-upgrade hook if defined:
   - debug: msg="Running node pre-upgrade hook {{ openshift_node_upgrade_pre_hook }}"
     when: openshift_node_upgrade_pre_hook is defined
@@ -87,6 +109,26 @@
 
   # If the host is a gluster host, need to verify gluster is healthy before
   # moving to the next host.
+  - name: Reapply any existing GlusterFS label
+    oc_label:
+      name: "{{ inventory_hostname }}"
+      kind: node
+      state: add
+      labels: "{{ openshift_storage_glusterfs_nodeselector }}"
+    when:
+    - 'glusterfs' in groups
+    - inventory_hostname in groups['glusterfs']
+
+  - name: Reapply any existing GlusterFS label
+    oc_label:
+      name: "{{ inventory_hostname }}"
+      kind: node
+      state: add
+      labels: "{{ openshift_storage_glusterfs_nodeselector }}"
+    when:
+    - 'glusterfs_registry' in groups
+    - inventory_hostname in groups['glusterfs_registry']
+
   - import_role:
       name: openshift_storage_glusterfs
       tasks_from: check_cluster_health.yml
