@@ -1,0 +1,12 @@
+---
+# oc delete --cascade=false seems broken for DaemonSets.
+# Using curl to talk to the API directly.
+# https://github.com/openshift/origin/issues/20585
+- name: Delete glusterfs daemonset w/o cascade
+  shell: "curl -k -X DELETE https://{{ groups.oo_first_master.0 }}:{{ openshift_master_api_port }}/apis/extensions/v1beta1/namespaces/{{ glusterfs_namespace }}/daemonsets/{{ item }} -d '{\"kind\":\"DeleteOptions\",\"apiVersion\":\"v1\",\"propagationPolicy\":\"Orphan\"}' -H \"Accept: application/json\" -H \"Content-Type: application/json\"  --cert {{ openshift.common.config_base }}/master/admin.crt --key {{ openshift.common.config_base }}//master/admin.key"
+  #shell: "{{ first_master_client_binary }} --config={{ openshift.common.config_base }}/master/admin.kubeconfig delete ds --namespace={{ glusterfs_namespace }} --cascade=false --selector=glusterfs"
+  delegate_to: "{{ groups.oo_first_master.0 }}"
+  failed_when: False
+  with_items:
+  - "glusterfs"
+  - "glusterfs-{{ glusterfs_name }}"

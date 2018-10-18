@@ -1,5 +1,4 @@
 ---
-
 - name: Delete pre-existing heketi resources
   oc_obj:
     namespace: "{{ glusterfs_namespace }}"
@@ -32,13 +31,16 @@
   oc_obj:
     namespace: "{{ glusterfs_namespace }}"
     kind: "{{ item.kind }}"
-    name: "{{ item.name }}"
+    name: "{{ item.name | default(omit) }}"
+    selector: "{{ item.selector | default(omit) }}"
     state: absent
   with_items:
   - kind: template
     name: glusterfs
   - kind: daemonset
     name: "glusterfs-{{ glusterfs_name }}"
+  - kind: pod
+    selector: "glusterfs={{ glusterfs_name }}-pod"
   - kind: storageclass
     name: "glusterfs-{{ glusterfs_name }}"
 
