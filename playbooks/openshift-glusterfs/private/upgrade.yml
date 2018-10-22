@@ -13,6 +13,35 @@
           status: "In Progress"
           start: "{{ lookup('pipe', 'date +%Y%m%d%H%M%SZ') }}"
 
+- name: GlusterFS logging SELinux workaround
+  hosts: "{{ l_glusterfs_hosts | default('oo_glusterfs_to_config') }}"
+  tasks:
+  - set_fact:
+      glusterfs_host: "{{ valid_glusterfs_host }}"
+      glusterfs_registry_host: "{{ valid_glusterfs_registry_host }}"
+      glusterfs_upgrade_logging_fix_host: "{{ valid_glusterfs_host | bool or valid_glusterfs_registry_host | bool }}"
+    vars:
+      target_glusterfs: "{{ openshift_storage_glusterfs_is_native | default(True) | bool and openshift_storage_glusterfs_upgrade_logging_fix | default(False) | bool }}"
+      target_glusterfs_registry: "{{ openshift_storage_glusterfs_registry_is_native | default(True) | bool and openshift_storage_glusterfs_registry_upgrade_logging_fix | default(False) | bool }}"
+      valid_glusterfs_host: "{{ target_glusterfs | bool and 'glusterfs' in groups and inventory_hostname in groups['glusterfs'] }}"
+      valid_glusterfs_registry_host: "{{ target_glusterfs_registry | bool and 'glusterfs_registry' in groups and inventory_hostname in groups['glusterfs_registry'] }}"
+
+  - block:
+    - import_role:
+        name: openshift_storage_glusterfs
+        tasks_from: glusterfs_config_facts.yml
+      when: glusterfs_host | bool
+
+    - import_role:
+        name: openshift_storage_glusterfs
+        tasks_from: glusterfs_registry_facts.yml
+      when: glusterfs_registry_host | bool
+
+    - import_role:
+        name: openshift_storage_glusterfs
+        tasks_from: upgrade_logging_fix.yml
+    when: glusterfs_upgrade_logging_fix_host | bool
+
 - name: Upgrade GlusterFS
   hosts: oo_first_master
   tasks:
@@ -20,6 +49,14 @@
     import_role:
       name: openshift_storage_glusterfs
       tasks_from: upgrade.yml
+
+- name: Cleanup GlusterFS logging SELinux workaround
+  hosts: "{{ l_glusterfs_hosts | default('oo_glusterfs_to_config') }}"
+  tasks:
+  - import_role:
+      name: openshift_storage_glusterfs
+      tasks_from: upgrade_logging_fix_rm.yml
+    when: glusterfs_upgrade_logging_fix_host | bool
 
 - name: GlusterFS Upgrade Checkpoint End
   hosts: all

@@ -44,6 +44,9 @@
     name: "glusterblock-{{ glusterfs_name }}-provisioner"
   failed_when: False
 
+- import_tasks: glusterfs_upgrade_logging_fix.yml
+  when: glusterfs_upgrade_logging_fix
+
 - import_tasks: delete_ds.yml
 
 - name: Get old-style GlusterFS pods

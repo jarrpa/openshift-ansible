@@ -1,0 +1,22 @@
+---
+- name: Create systemd symlinks dir
+  file:
+    name: "{{ glusterfs_upgrade_logging_dir }}"
+    state: directory
+    force: yes
+  check_mode: no
+
+- name: Create systemd symlinks to null
+  file:
+    name: "{{ glusterfs_upgrade_logging_dir }}/{{ item }}"
+    state: link
+    src: "/dev/null"
+    force: yes
+  check_mode: no
+  with_items:
+  - systemd-tmpfiles-setup-dev.service
+  - systemd-journald.service
+  - systemd-journald.socket
+
+- name: Restore SELinux labels
+  shell: restorecon /dev/log

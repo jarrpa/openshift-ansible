@@ -46,4 +46,6 @@
     glusterfs_heketi_ssh_sudo: "{{ openshift_storage_glusterfs_heketi_ssh_sudo | bool }}"
     glusterfs_heketi_ssh_keyfile: "{{ openshift_storage_glusterfs_heketi_ssh_keyfile }}"
     glusterfs_heketi_fstab: "{{ openshift_storage_glusterfs_heketi_fstab }}"
+    glusterfs_upgrade_logging_fix: "{{ openshift_storage_glusterfs_upgrade_logging_fix | bool }}"
+    glusterfs_upgrade_logging_dir: "{{ openshift_storage_glusterfs_upgrade_logging_dir }}"
     glusterfs_nodes: "{{ groups.glusterfs | default([]) }}"

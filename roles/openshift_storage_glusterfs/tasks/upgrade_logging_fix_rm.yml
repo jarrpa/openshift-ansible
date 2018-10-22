@@ -1,0 +1,7 @@
+---
+- name: Remove systemd symlinks
+  file:
+    name: "{{ glusterfs_upgrade_logging_dir }}"
+    state: absent
+    force: yes
+  check_mode: no

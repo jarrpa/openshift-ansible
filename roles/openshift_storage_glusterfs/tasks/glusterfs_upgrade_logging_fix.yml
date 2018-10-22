@@ -1,0 +1,58 @@
+---
+- name: Get GlusterFS DaemonSet
+  shell: "{{ openshift_client_binary }} --config={{ mktemp.stdout }}/admin.kubeconfig get ds -n {{ glusterfs_namespace }} --selector=glusterfs -o yaml > {{ mktemp.stdout }}/glusterfs-ds.yaml"
+
+- name: Sanitize GlusterFS DaemonSet
+  yedit:
+    src: "{{ mktemp.stdout }}/glusterfs-ds.yaml"
+    state: absent
+    update: true
+    key: "{{ item[0] }}"
+    value: "{{ item[1] }}"
+  with_list:
+  - [ "items[0]", "status" ]
+  - [ "items[0].metadata", "creationTimestamp" ]
+  - [ "items[0].metadata", "generation" ]
+  - [ "items[0].metadata", "resourceVersion" ]
+  - [ "items[0].metadata", "selfLink" ]
+  - [ "items[0].metadata", "uid" ]
+  - [ "items[0].spec.template.spec.containers[0].volumeMounts", { mountPath: "/usr/lib/systemd/system/systemd-tmpfiles-setup-dev.service", name: "systemd-tmpfiles-setup-dev-service"  } ]
+  - [ "items[0].spec.template.spec.containers[0].volumeMounts", { mountPath: "/usr/lib/systemd/system/systemd-journald.service", name: "systemd-journald-service"  } ]
+  - [ "items[0].spec.template.spec.containers[0].volumeMounts", { mountPath: "/usr/lib/systemd/system/systemd-journald.socket", name: "systemd-journald-socket"  } ]
+  - [ "items[0].spec.template.spec.volumes", { name: "systemd-tmpfiles-setup-dev-service", hostPath: { path: "{{ glusterfs_upgrade_logging_dir }}/systemd-tmpfiles-setup-dev.service", type: "" } } ]
+  - [ "items[0].spec.template.spec.volumes", { name: "systemd-journald-service", hostPath: { path: "{{ glusterfs_upgrade_logging_dir }}/systemd-journald.service", type: "" } } ]
+  - [ "items[0].spec.template.spec.volumes", { name: "systemd-journald-socket", hostPath: { path: "{{ glusterfs_upgrade_logging_dir }}/systemd-journald.socket", type: "" } } ]
+
+- name: Update GlusterFS DaemonSet
+  yedit:
+    src: "{{ mktemp.stdout }}/glusterfs-ds.yaml"
+    edits:
+    - action: append
+      key: "items[0].spec.template.spec.volumes"
+      value: { name: "systemd-tmpfiles-setup-dev-service", hostPath: { path: "{{ glusterfs_upgrade_logging_dir }}/systemd-tmpfiles-setup-dev.service", type: "" } }
+    - action: append
+      key: "items[0].spec.template.spec.volumes"
+      value: { name: "systemd-journald-service", hostPath: { path: "{{ glusterfs_upgrade_logging_dir }}/systemd-journald.service", type: "" } }
+    - action: append
+      key: "items[0].spec.template.spec.volumes"
+      value: { name: "systemd-journald-socket", hostPath: { path: "{{ glusterfs_upgrade_logging_dir }}/systemd-journald.socket", type: "" } }
+    - action: append
+      key: "items[0].spec.template.spec.containers[0].volumeMounts"
+      value: { mountPath: "/usr/lib/systemd/system/systemd-tmpfiles-setup-dev.service", name: "systemd-tmpfiles-setup-dev-service"  }
+    - action: append
+      key: "items[0].spec.template.spec.containers[0].volumeMounts"
+      value: { mountPath: "/usr/lib/systemd/system/systemd-journald.service", name: "systemd-journald-service"  }
+    - action: append
+      key: "items[0].spec.template.spec.containers[0].volumeMounts"
+      value: { mountPath: "/usr/lib/systemd/system/systemd-journald.socket", name: "systemd-journald-socket"  }
+
+- name: Update GlusterFS DaemonSet
+  command: "{{ openshift_client_binary }} --config={{ mktemp.stdout }}/admin.kubeconfig apply -f {{ mktemp.stdout }}/glusterfs-ds.yaml -n {{ glusterfs_namespace }}"
+  register: update_apply
+  failed_when: "'error' in update_apply.stderr or (update_apply.rc | int != 0)"
+
+- name: Restart GlusterFS pods
+  include_tasks: glusterfs_restart_pod.yml
+  vars:
+    restart_node: "{{ item }}"
+  with_items: "{{ glusterfs_pods | default([]) }}"
